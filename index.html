@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PakExport Invoicer — Pakistan Export Invoice Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=DM+Sans:wght@300;400;500;600&family=Lora:wght@500;600&family=Cormorant+Garamond:wght@500;600&family=Space+Grotesk:wght@400;500;600&family=Syne:wght@500;600;700&family=Fraunces:wght@500;600&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --brand:#0F6E56;--brand-light:#E1F5EE;--brand-mid:#1D9E75;
+  --gold:#BA7517;--gold-light:#FAEEDA;
+  --text:#1C1C1A;--muted:#6B6A65;--border:#D8D6CC;--surface:#F4F2EB;
+  --bg:#FAFAF8;--white:#FFFFFF;
+  --radius:12px;--radius-sm:8px;
+  --shadow:0 1px 3px rgba(0,0,0,.06),0 4px 12px rgba(0,0,0,.04);
+  --shadow-lg:0 8px 32px rgba(0,0,0,.10);
+  --inv-brand:#0F6E56;--inv-text:#1a1a1a;--inv-font:'DM Sans',sans-serif;
+}
+html{font-size:14px}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* ─── LAYOUT ─── */
+.shell{display:grid;grid-template-columns:1fr 1fr;min-height:100vh}
+@media(max-width:900px){.shell{grid-template-columns:1fr}}
+
+.left-panel{background:var(--bg);overflow-y:auto;height:100vh;position:sticky;top:0}
+.right-panel{background:var(--surface);overflow-y:auto;height:100vh;position:sticky;top:0;border-left:1px solid var(--border)}
+
+/* ─── APP HEADER ─── */
+.app-header{padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);background:var(--white);display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:10}
+.logo-icon{width:36px;height:36px;background:var(--brand);border-radius:9px;display:grid;place-items:center;flex-shrink:0}
+.logo-icon svg{width:18px;height:18px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.brand-name{font-family:'Playfair Display',serif;font-size:16px;font-weight:600;color:var(--text);line-height:1.2}
+.brand-sub{font-size:11px;color:var(--muted);margin-top:1px}
+.pk-badge{margin-left:auto;background:var(--brand-light);color:var(--brand);font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px;border:1px solid #A8DECE;white-space:nowrap}
+
+/* ─── TABS ─── */
+.tab-bar{display:flex;border-bottom:1px solid var(--border);background:var(--white);padding:0 1.5rem}
+.tab-btn{padding:.6rem 1rem;font-size:12px;font-weight:500;color:var(--muted);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;font-family:'DM Sans',sans-serif;white-space:nowrap}
+.tab-btn.active{color:var(--brand);border-bottom-color:var(--brand)}
+
+/* ─── FORM CONTENT ─── */
+.tab-content{display:none;padding:1.25rem 1.5rem}
+.tab-content.active{display:block}
+.section-card{background:var(--white);border:0.5px solid var(--border);border-radius:var(--radius);padding:1.25rem;margin-bottom:1rem;box-shadow:var(--shadow)}
+.sec-title{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--brand);margin-bottom:1rem;display:flex;align-items:center;gap:6px}
+.sec-title svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem}
+.field{margin-bottom:.75rem}
+.field:last-child{margin-bottom:0}
+label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px;font-weight:500;letter-spacing:.01em}
+input,select,textarea{width:100%;border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:7px 10px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--white);outline:none;transition:border .15s,box-shadow .15s}
+input:focus,select:focus,textarea:focus{border-color:var(--brand-mid);box-shadow:0 0 0 3px rgba(29,158,117,.1)}
+textarea{resize:vertical;min-height:60px}
+select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B6A65' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px}
+
+/* ─── ITEMS TABLE ─── */
+.items-wrap{overflow-x:auto}
+.items-table{width:100%;border-collapse:collapse;font-size:12px;min-width:560px}
+.items-table th{background:var(--surface);font-weight:500;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding:7px 8px;text-align:left;border-bottom:1px solid var(--border)}
+.items-table td{padding:4px 3px;vertical-align:middle;border-bottom:1px solid #f0eeea}
+.items-table td input{border-radius:6px;padding:5px 7px;font-size:12px}
+.items-table td:first-child{width:28px;text-align:center;color:var(--muted);font-size:11px}
+.items-table td:last-child{width:30px;text-align:center}
+.del-btn{background:none;border:none;cursor:pointer;color:#C8C6BC;width:24px;height:24px;border-radius:5px;font-size:17px;line-height:1;display:grid;place-items:center;transition:all .12s}
+.del-btn:hover{color:#D94545;background:#FCEBEB}
+.add-row-btn{background:none;border:1.5px dashed var(--border);color:var(--muted);padding:6px 14px;border-radius:var(--radius-sm);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;width:100%;transition:all .15s;margin-top:.5rem}
+.add-row-btn:hover{border-color:var(--brand-mid);color:var(--brand);background:var(--brand-light)}
+
+/* ─── TOTALS ─── */
+.totals-block{display:flex;justify-content:flex-end;margin-top:.75rem}
+.totals-inner{width:260px}
+.tot-row{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;padding:4px 0;color:var(--muted)}
+.tot-row.grand{font-weight:600;font-size:14px;color:var(--text);border-top:1px solid var(--border);padding-top:8px;margin-top:4px}
+.tot-row input{width:80px;text-align:right}
+
+/* ─── DESIGN TAB ─── */
+.design-row{display:flex;align-items:center;gap:10px;margin-bottom:.75rem}
+.design-row label{margin:0;flex:1;min-width:0}
+.color-swatch-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:.5rem}
+.swatch{width:26px;height:26px;border-radius:6px;border:2px solid transparent;cursor:pointer;transition:all .15s;flex-shrink:0}
+.swatch:hover,.swatch.active{border-color:var(--text);transform:scale(1.1)}
+.color-input-wrap{display:flex;align-items:center;gap:8px}
+.color-input-wrap input[type=color]{width:36px;height:36px;padding:2px;border-radius:8px;cursor:pointer;border:1px solid var(--border)}
+.color-input-wrap input[type=text]{width:90px}
+.font-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:.5rem}
+.font-pill{padding:8px 12px;border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px;transition:all .15s;text-align:center;background:var(--white)}
+.font-pill:hover{border-color:var(--brand-mid);color:var(--brand)}
+.font-pill.active{border-color:var(--brand);background:var(--brand-light);color:var(--brand)}
+
+/* ─── LOGO TAB ─── */
+.logo-drop{border:2px dashed var(--border);border-radius:var(--radius);padding:2rem 1rem;text-align:center;cursor:pointer;transition:all .15s;background:var(--surface)}
+.logo-drop:hover{border-color:var(--brand-mid);background:var(--brand-light)}
+.logo-drop input{display:none}
+.logo-preview-wrap{display:flex;flex-direction:column;align-items:center;gap:.75rem}
+.logo-preview-wrap img{max-width:180px;max-height:100px;object-fit:contain;border-radius:6px}
+.slider-row{display:flex;align-items:center;gap:10px;margin-bottom:.5rem}
+.slider-row label{width:80px;font-size:11px;color:var(--muted);flex-shrink:0}
+.slider-row input[type=range]{flex:1;accent-color:var(--brand)}
+.slider-row span{width:40px;font-size:11px;color:var(--muted);text-align:right}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem}
+.toggle{position:relative;display:inline-flex;align-items:center;cursor:pointer;gap:8px;font-size:12px;color:var(--muted)}
+.toggle input{position:absolute;opacity:0;width:0;height:0}
+.toggle-track{width:36px;height:20px;background:#D8D6CC;border-radius:10px;transition:.15s;flex-shrink:0}
+.toggle input:checked~.toggle-track{background:var(--brand)}
+.toggle-thumb{position:absolute;left:3px;top:3px;width:14px;height:14px;background:#fff;border-radius:50%;transition:.15s;pointer-events:none}
+.toggle input:checked~.toggle-track .toggle-thumb{left:19px}
+
+/* ─── ACTION BUTTONS ─── */
+.actions-bar{padding:1rem 1.5rem;border-top:1px solid var(--border);background:var(--white);display:flex;gap:8px;position:sticky;bottom:0}
+.btn{padding:10px 16px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;display:flex;align-items:center;gap:6px;border:none;transition:all .15s}
+.btn-secondary{background:var(--white);border:0.5px solid var(--border);color:var(--muted)}
+.btn-secondary:hover{border-color:var(--brand-mid);color:var(--brand)}
+.btn-primary{background:var(--brand);color:#fff;flex:1;justify-content:center}
+.btn-primary:hover{background:var(--brand-mid)}
+.btn-gold{background:var(--gold);color:#fff}
+.btn-gold:hover{background:#9E6212}
+
+/* ─── RIGHT PANEL — LIVE PREVIEW ─── */
+.preview-header{padding:1rem 1.5rem;border-bottom:1px solid var(--border);background:var(--white);display:flex;align-items:center;justify-content:space-between}
+.preview-title{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;display:flex;align-items:center;gap:6px}
+.preview-dot{width:8px;height:8px;border-radius:50%;background:#2ACC8A;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.preview-frame{padding:1.5rem;min-height:calc(100vh - 57px)}
+
+/* ─── INVOICE DOCUMENT ─── */
+.inv-doc{background:#fff;border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,.10);overflow:hidden;font-size:12px;color:#1a1a1a}
+.inv-doc *{font-family:var(--inv-font);color:inherit}
+.inv-top-bar{height:8px;background:var(--inv-brand)}
+.inv-body{padding:1.75rem 2rem}
+.inv-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.75rem}
+.inv-logo-area{display:flex;flex-direction:column;gap:6px}
+.inv-logo-img{max-height:70px;display:block;object-fit:contain}
+.inv-title-area{text-align:right}
+.inv-main-title{font-size:26px;font-weight:700;color:var(--inv-brand);letter-spacing:-.5px;line-height:1.1;text-align:right}
+.inv-meta-table{font-size:11px;color:#555;text-align:right;margin-top:8px;line-height:1.8}
+.inv-meta-table strong{color:#1a1a1a}
+.inv-divider{height:1.5px;background:var(--inv-brand);margin:0 0 1.25rem;opacity:.2}
+.inv-parties{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;background:#F6F4EE;border-radius:8px;padding:1rem 1.25rem;margin-bottom:1.25rem}
+.party-lbl{font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--inv-brand);font-weight:700;margin-bottom:4px}
+.party-name{font-size:13px;font-weight:600;color:#1a1a1a;margin-bottom:3px}
+.party-detail{font-size:11px;color:#555;line-height:1.65}
+.inv-meta-pills{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1.25rem}
+.meta-pill{background:#F6F4EE;border-radius:7px;padding:8px 10px}
+.meta-pill-lbl{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--inv-brand);font-weight:700;margin-bottom:3px}
+.meta-pill-val{font-size:12px;font-weight:600;color:#1a1a1a}
+.inv-table{width:100%;border-collapse:collapse;font-size:11.5px;margin-bottom:1.25rem}
+.inv-table th{background:var(--inv-brand);color:#fff;padding:8px 10px;text-align:left;font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.inv-table th:last-child,.inv-table td:last-child{text-align:right}
+.inv-table td{padding:8px 10px;border-bottom:1px solid #eee}
+.inv-table tr:last-child td{border-bottom:none}
+.inv-table tr:nth-child(even) td{background:#F9F8F5}
+.inv-totals-wrap{display:flex;justify-content:flex-end;margin-bottom:1.25rem}
+.inv-totals-inner{width:220px}
+.inv-tr{display:flex;justify-content:space-between;font-size:11.5px;padding:3.5px 0;color:#666}
+.inv-tr.grand{font-weight:700;font-size:13.5px;color:#1a1a1a;border-top:2px solid var(--inv-brand);padding-top:7px;margin-top:3px}
+.inv-footer-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;padding-top:1.25rem;border-top:1px solid #e8e6e0;font-size:11px;color:#555}
+.footer-lbl{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--inv-brand);font-weight:700;margin-bottom:4px}
+.sig-line{border-top:1px solid #ccc;margin-top:28px;padding-top:4px;font-size:10px;color:#aaa;text-align:center}
+.inv-bottom-bar{height:6px;background:var(--inv-brand);opacity:.3;margin-top:1.5rem}
+
+/* ─── PRINT ─── */
+@media print{
+  .shell{display:block}
+  .left-panel,.actions-bar,.preview-header{display:none!important}
+  .right-panel{height:auto;overflow:visible;border:none}
+  .preview-frame{padding:.5rem}
+  .inv-doc{box-shadow:none;border-radius:0}
+}
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <!-- ════════════════════════════════ LEFT PANEL ════════════════════════════════ -->
+  <div class="left-panel">
+    <div class="app-header">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      </div>
+      <div>
+        <div class="brand-name">PakExport Invoicer</div>
+        <div class="brand-sub">NTN · HS Code · DTRE · L/C Ready</div>
+      </div>
+      <div class="pk-badge">🇵🇰 Pakistan Trade Standard</div>
+    </div>
+
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="switchTab('exporter')">Exporter</button>
+      <button class="tab-btn" onclick="switchTab('buyer')">Buyer</button>
+      <button class="tab-btn" onclick="switchTab('shipment')">Shipment</button>
+      <button class="tab-btn" onclick="switchTab('items')">Items</button>
+      <button class="tab-btn" onclick="switchTab('design')">Design</button>
+      <button class="tab-btn" onclick="switchTab('logo')">Logo</button>
+    </div>
+
+    <!-- EXPORTER TAB -->
+    <div class="tab-content active" id="tab-exporter">
+      <div class="section-card">
+        <div class="sec-title"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>Exporter / Seller</div>
+        <div class="grid2">
+          <div class="field"><label>Company / Exporter Name</label><input id="exp-name" placeholder="e.g. Lahore Textile Mills Pvt Ltd" oninput="liveUpdate()"/></div>
+          <div class="field"><label>NTN (National Tax Number)</label><input id="exp-ntn" placeholder="e.g. 1234567-8" oninput="liveUpdate()"/></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><label>STRN (Sales Tax Registration)</label><input id="exp-strn" placeholder="e.g. 01-23-4567-890-11" oninput="liveUpdate()"/></div>
+          <div class="field"><label>Chamber of Commerce Reg #</label><input id="exp-cc" placeholder="Optional" oninput="liveUpdate()"/></div>
+        </div>
+        <div class="field"><label>Address</label><input id="exp-addr" placeholder="Street, City, Province, Pakistan" oninput="liveUpdate()"/></div>
+        <div class="grid3">
+          <div class="field"><label>Phone</label><input id="exp-phone" placeholder="+92 300 0000000" oninput="liveUpdate()"/></div>
+          <div class="field"><label>Email</label><input id="exp-email" placeholder="export@company.com" oninput="liveUpdate()"/></div>
+          <div class="field"><label>Bank Name</label><input id="exp-bank" placeholder="HBL / MCB / UBL" oninput="liveUpdate()"/></div>
+        </div>
+        <div class="grid3">
+          <div class="field"><label>Bank Account #</label><input id="exp-acc" placeholder="PK00XXXX0000000000000000" oninput="liveUpdate()"/></div>
+          <div class="field"><label>SWIFT / BIC Code</label><input id="exp-swift" placeholder="e.g. HABIPKKA" oninput="liveUpdate()"/></div>
+          <div class="field"><label>IBAN</label><input id="exp-iban" placeholder="PK36SCBL0000001123456702" oninput="liveUpdate()"/></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BUYER TAB -->
+    <div class="tab-content" id="tab-buyer">
+      <div class="section-card">
+        <div class="sec-title"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>Buyer / Importer</div>
+        <div class="grid2">
+          <div class="field"><label>Buyer Company Name</label><input id="buy-name" placeholder="e.g. ABC Trading Co. Ltd" oninput="liveUpdate()"/></div>
+          <div class="field"><label>Country</label><input id="buy-country" placeholder="e.g. United Kingdom" oninput="liveUpdate()"/></div>
+        </div>
+        <div class="field"><label>Address</label><textarea id="buy-addr" placeholder="Full buyer address including city, postcode" oninput="liveUpdate()"></textarea></div>
+        <div class="grid2">
+          <div class="field"><label>Buyer Contact Person</label><input id="buy-contact" placeholder="Full name" oninput="liveUpdate()"/></div>
+          <div class="field"><label>Buyer Email</label><input id="buy-email" placeholder="contact@buyer.com" oninput="liveUpdate()"/></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><label>Buyer Phone</label><input id="buy-phone" placeholder="+44 20 0000 0000" oninput="liveUpdate()"/></div>
+          <div class="field"><label>Buyer Reference / PO #</label><input id="buy-po" placeholder="PO-2025-001" oninput="liveUpdate()"/></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SHIPMENT TAB -->
+    <div class="tab-content" id="tab-shipment">
+      <div class="section-card">
+        <div class="sec-title"><svg viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 4v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>Invoice & Shipment Details</div>
+        <div class="grid3">
+          <div class="field"><label>Invoice Number</label><input id="inv-no" placeholder="e.g. PKE-2025-001" oninput="liveUpdate()"/></div>
+          <div class="field"><label>Invoice Date</label><input id="inv-date" type="date" oninput="liveUpdate()"/></div>
+          <div class="field"><label>Currency</label>
+            <select id="inv-currency" onchange="liveUpdate()">
+              <option value="USD">USD — US Dollar</option>
+              <option value="GBP">GBP — British Pound</option>
+              <option value="EUR">EUR — Euro</option>
+              <option value="AED">AED — UAE Dirham</option>
+              <option value="CNY">CNY — Chinese Yuan</option>
+              <option value="PKR">PKR — Pakistani Rupee</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid3">
+          <div class="field"><label>Port of Loading</label><input id="port-load" value="Karachi Port" oninput="liveUpdate()"/></div>
+          <div class="field"><label>Port of Discharge</label><input id="port-disc" placeholder="e.g. Port of Felixstowe" oninput="liveUpdate()"/></div>
+          <div class="field"><label>Incoterms</label>
+            <select id="incoterms" onchange="liveUpdate()">
+              <option>FOB — Karachi</option><option>CIF</option><option>CFR</option>
+              <option>EXW</option><option>DDP</option><option>DAP</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid3">
+          <div class="field"><label>Shipment Mode</label>
+            <select id="ship-mode" onchange="liveUpdate()">
+              <option>Sea Freight (FCL)</option><option>Sea Freight (LCL)</option>
+              <option>Air Freight</option><option>Road Transport</option>
+            </select>
+          </div>
+          <div class="field"><label>Country of Origin</label><input id="origin" value="Pakistan" oninput="liveUpdate()"/></div>
+          <div class="field"><label>L/C Number</label><input id="lc-no" placeholder="Letter of Credit No." oninput="liveUpdate()"/></div>
+        </div>
+        <div class="field"><label>Payment Terms</label><input id="pay-terms" placeholder="e.g. 50% advance, 50% on BL — T/T 30 days" oninput="liveUpdate()"/></div>
+      </div>
+      <div class="section-card">
+        <div class="sec-title"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Declarations & Notes</div>
+        <div class="grid2">
+          <div class="field"><label>DTRE / Duty Drawback Ref</label><input id="dtre" placeholder="If applicable" oninput="liveUpdate()"/></div>
+          <div class="field"><label>Remarks / Special Instructions</label><input id="remarks" placeholder="e.g. Fragile goods" oninput="liveUpdate()"/></div>
+        </div>
+        <div class="field"><label>Declaration</label><textarea id="declaration" oninput="liveUpdate()">We hereby certify that the goods described herein are of Pakistan origin and that the particulars given are true and correct.</textarea></div>
+      </div>
+    </div>
+
+    <!-- ITEMS TAB -->
+    <div class="tab-content" id="tab-items">
+      <div class="section-card">
+        <div class="sec-title"><svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>Line Items</div>
+        <div class="items-wrap">
+          <table class="items-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Description of Goods</th>
+                <th style="width:80px">HS Code</th>
+                <th style="width:60px">Qty</th>
+                <th style="width:55px">Unit</th>
+                <th style="width:80px">Unit Price</th>
+                <th style="width:80px;text-align:right">Amount</th>
+                <th style="width:28px"></th>
+              </tr>
+            </thead>
+            <tbody id="items-body"></tbody>
+          </table>
+        </div>
+        <button class="add-row-btn" onclick="addRow()">+ Add line item</button>
+        <div class="totals-block">
+          <div class="totals-inner">
+            <div class="tot-row"><span>Subtotal</span><span id="subtotal">—</span></div>
+            <div class="tot-row"><span>Freight / Insurance</span><input id="freight" type="number" placeholder="0" oninput="calcTotals()"/></div>
+            <div class="tot-row"><span>Discount</span><input id="discount" type="number" placeholder="0" oninput="calcTotals()"/></div>
+            <div class="tot-row grand"><span>Total Invoice Value</span><span id="grand-total">—</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DESIGN TAB -->
+    <div class="tab-content" id="tab-design">
+      <div class="section-card">
+        <div class="sec-title">Brand Color (Header, Accents, Table)</div>
+        <div class="color-input-wrap">
+          <input type="color" id="brand-color-picker" value="#0F6E56" oninput="onBrandColor(this.value)">
+          <input type="text" id="brand-color-hex" value="#0F6E56" placeholder="#0F6E56" oninput="onBrandColorHex(this.value)" maxlength="7">
+        </div>
+        <div class="color-swatch-row" id="brand-swatches">
+          <div class="swatch active" style="background:#0F6E56" onclick="setBrandColor('#0F6E56')"></div>
+          <div class="swatch" style="background:#1A3C6E" onclick="setBrandColor('#1A3C6E')"></div>
+          <div class="swatch" style="background:#7C2B2B" onclick="setBrandColor('#7C2B2B')"></div>
+          <div class="swatch" style="background:#2B4D7C" onclick="setBrandColor('#2B4D7C')"></div>
+          <div class="swatch" style="background:#4A2B7C" onclick="setBrandColor('#4A2B7C')"></div>
+          <div class="swatch" style="background:#1A4A3C" onclick="setBrandColor('#1A4A3C')"></div>
+          <div class="swatch" style="background:#7C5A1A" onclick="setBrandColor('#7C5A1A')"></div>
+          <div class="swatch" style="background:#1C1C1A" onclick="setBrandColor('#1C1C1A')"></div>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="sec-title">Text Color</div>
+        <div class="color-input-wrap">
+          <input type="color" id="text-color-picker" value="#1a1a1a" oninput="onTextColor(this.value)">
+          <input type="text" id="text-color-hex" value="#1a1a1a" placeholder="#1a1a1a" oninput="onTextColorHex(this.value)" maxlength="7">
+        </div>
+        <div class="color-swatch-row">
+          <div class="swatch" style="background:#1a1a1a" onclick="setTextColor('#1a1a1a')"></div>
+          <div class="swatch" style="background:#2C2C2A" onclick="setTextColor('#2C2C2A')"></div>
+          <div class="swatch" style="background:#3A3A38" onclick="setTextColor('#3A3A38')"></div>
+          <div class="swatch" style="background:#1A2B3C" onclick="setTextColor('#1A2B3C')"></div>
+          <div class="swatch" style="background:#2B1A1A" onclick="setTextColor('#2B1A1A')"></div>
+          <div class="swatch" style="background:#1A1A2B" onclick="setTextColor('#1A1A2B')"></div>
+          <div class="swatch" style="background:#555" onclick="setTextColor('#555555')"></div>
+          <div class="swatch" style="background:#000" onclick="setTextColor('#000000')"></div>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="sec-title">Invoice Font</div>
+        <div class="font-grid" id="font-grid">
+          <div class="font-pill active" style="font-family:'DM Sans'" onclick="setFont('DM Sans','DM Sans,sans-serif')">DM Sans</div>
+          <div class="font-pill" style="font-family:'Playfair Display'" onclick="setFont('Playfair Display','Playfair Display,serif')">Playfair Display</div>
+          <div class="font-pill" style="font-family:'Lora'" onclick="setFont('Lora','Lora,serif')">Lora</div>
+          <div class="font-pill" style="font-family:'Cormorant Garamond'" onclick="setFont('Cormorant Garamond','Cormorant Garamond,serif')">Cormorant</div>
+          <div class="font-pill" style="font-family:'Space Grotesk'" onclick="setFont('Space Grotesk','Space Grotesk,sans-serif')">Space Grotesk</div>
+          <div class="font-pill" style="font-family:'Syne'" onclick="setFont('Syne','Syne,sans-serif')">Syne</div>
+          <div class="font-pill" style="font-family:'Fraunces'" onclick="setFont('Fraunces','Fraunces,serif')">Fraunces</div>
+          <div class="font-pill" style="font-family:'Plus Jakarta Sans'" onclick="setFont('Plus Jakarta Sans','Plus Jakarta Sans,sans-serif')">Plus Jakarta</div>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="sec-title">Layout Options</div>
+        <div class="toggle-row">
+          <span style="font-size:12px;color:var(--muted)">Show top color bar</span>
+          <label class="toggle"><input type="checkbox" id="tog-topbar" checked onchange="liveUpdate()"><div class="toggle-track"><div class="toggle-thumb"></div></div></label>
+        </div>
+        <div class="toggle-row">
+          <span style="font-size:12px;color:var(--muted)">Show bottom bar</span>
+          <label class="toggle"><input type="checkbox" id="tog-bottombar" checked onchange="liveUpdate()"><div class="toggle-track"><div class="toggle-thumb"></div></div></label>
+        </div>
+        <div class="toggle-row">
+          <span style="font-size:12px;color:var(--muted)">Colored table header</span>
+          <label class="toggle"><input type="checkbox" id="tog-tablecolor" checked onchange="liveUpdate()"><div class="toggle-track"><div class="toggle-thumb"></div></div></label>
+        </div>
+        <div class="toggle-row">
+          <span style="font-size:12px;color:var(--muted)">Show divider line</span>
+          <label class="toggle"><input type="checkbox" id="tog-divider" checked onchange="liveUpdate()"><div class="toggle-track"><div class="toggle-thumb"></div></div></label>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOGO TAB -->
+    <div class="tab-content" id="tab-logo">
+      <div class="section-card">
+        <div class="sec-title">Company Logo</div>
+        <div class="logo-drop" id="logo-drop" onclick="document.getElementById('logo-input').click()" ondragover="event.preventDefault()" ondrop="handleLogoDrop(event)">
+          <input type="file" id="logo-input" accept="image/*" onchange="handleLogoUpload(event)">
+          <div id="logo-drop-inner">
+            <div style="font-size:28px;margin-bottom:8px">🖼️</div>
+            <div style="font-size:13px;color:var(--muted);font-weight:500">Click to upload logo</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px">PNG, JPG, SVG, WebP — drag & drop OK</div>
+          </div>
+          <div class="logo-preview-wrap" id="logo-preview" style="display:none">
+            <img id="logo-img-thumb" src="" alt="Logo preview">
+            <button onclick="event.stopPropagation();removeLogo()" style="font-size:11px;color:#D94545;background:none;border:none;cursor:pointer">Remove logo</button>
+          </div>
+        </div>
+
+        <div style="margin-top:1rem">
+          <div class="slider-row">
+            <label>Width</label>
+            <input type="range" id="logo-w" min="40" max="240" value="120" oninput="updateLogoSize()">
+            <span id="logo-w-val">120px</span>
+          </div>
+          <div class="slider-row">
+            <label>Height</label>
+            <input type="range" id="logo-h" min="20" max="120" value="60" oninput="updateLogoSize()">
+            <span id="logo-h-val">60px</span>
+          </div>
+          <div class="slider-row">
+            <label>Padding</label>
+            <input type="range" id="logo-pad" min="0" max="20" value="4" oninput="liveUpdate()">
+            <span id="logo-pad-val">4px</span>
+          </div>
+        </div>
+
+        <div class="toggle-row" style="margin-top:.5rem">
+          <span style="font-size:12px;color:var(--muted)">Lock aspect ratio</span>
+          <label class="toggle"><input type="checkbox" id="logo-lock" checked><div class="toggle-track"><div class="toggle-thumb"></div></div></label>
+        </div>
+        <div class="toggle-row">
+          <span style="font-size:12px;color:var(--muted)">Transparent background</span>
+          <label class="toggle"><input type="checkbox" id="logo-transp" onchange="liveUpdate()"><div class="toggle-track"><div class="toggle-thumb"></div></div></label>
+        </div>
+        <div style="margin-top:.75rem">
+          <label>Position</label>
+          <div style="display:flex;gap:8px;margin-top:4px">
+            <button class="font-pill active" id="pos-left" onclick="setLogoPos('left')">Left</button>
+            <button class="font-pill" id="pos-center" onclick="setLogoPos('center')">Center</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="actions-bar">
+      <button class="btn btn-secondary" onclick="clearAll()">↺ Clear</button>
+      <button class="btn btn-gold" onclick="printPDF()">⬇ Export PDF</button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════ RIGHT PANEL ════════════════════════════════ -->
+  <div class="right-panel">
+    <div class="preview-header">
+      <div class="preview-title"><div class="preview-dot"></div>Live Preview</div>
+      <button class="btn btn-secondary" style="font-size:11px;padding:5px 12px" onclick="printPDF()">⬇ Print / PDF</button>
+    </div>
+    <div class="preview-frame">
+      <div class="inv-doc" id="inv-doc">
+        <!-- rendered live -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let rows = [], rowId = 0;
+let logoSrc = null, logoPosLeft = true;
+let logoNatW = 0, logoNatH = 0, logoLocked = true;
+let invBrandColor = '#0F6E56', invTextColor = '#1a1a1a', invFont = 'DM Sans,sans-serif';
+
+// ─── TABS ────────────────────────────────────────────────────────────────────
+function switchTab(name){
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>{
+    const tabs=['exporter','buyer','shipment','items','design','logo'];
+    b.classList.toggle('active', tabs[i]===name);
+  });
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+}
+
+// ─── ROWS ────────────────────────────────────────────────────────────────────
+function addRow(desc='',hs='',qty='',unit='PCS',price=''){
+  const id=rowId++;
+  rows.push({id,desc,hs,qty,unit,price});
+  renderRows();
+}
+
+function renderRows(){
+  const tb=document.getElementById('items-body');
+  tb.innerHTML=rows.map((r,i)=>`
+    <tr>
+      <td>${i+1}</td>
+      <td><input value="${esc(r.desc)}" placeholder="Description of goods" oninput="updateRow(${r.id},'desc',this.value)"/></td>
+      <td><input value="${esc(r.hs)}" placeholder="6208.91" oninput="updateRow(${r.id},'hs',this.value)"/></td>
+      <td><input type="number" value="${esc(r.qty)}" placeholder="0" oninput="updateRow(${r.id},'qty',this.value)"/></td>
+      <td><input value="${esc(r.unit)}" placeholder="PCS" oninput="updateRow(${r.id},'unit',this.value)"/></td>
+      <td><input type="number" value="${esc(r.price)}" placeholder="0.00" step="0.01" oninput="updateRow(${r.id},'price',this.value)"/></td>
+      <td style="text-align:right;padding:5px 8px;font-size:12px;color:var(--text)">${fmtAmt(r.qty,r.price)}</td>
+      <td><button class="del-btn" onclick="delRow(${r.id})">×</button></td>
+    </tr>`).join('');
+  calcTotals();
+}
+
+function updateRow(id,field,val){
+  const r=rows.find(x=>x.id===id);
+  if(r){r[field]=val; calcTotals(); renderLiveAmounts();}
+}
+
+function renderLiveAmounts(){
+  const trs=document.querySelectorAll('#items-body tr');
+  rows.forEach((r,i)=>{
+    if(trs[i]){const cells=trs[i].querySelectorAll('td');cells[6].textContent=fmtAmt(r.qty,r.price);}
+  });
+  liveUpdate();
+}
+
+function delRow(id){rows=rows.filter(x=>x.id!==id);renderRows();liveUpdate();}
+
+function fmtAmt(qty,price){
+  const v=parseFloat(qty||0)*parseFloat(price||0);
+  return isNaN(v)||v===0?'—':v.toFixed(2);
+}
+
+function esc(s){return String(s||'').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+
+function getCur(){return document.getElementById('inv-currency').value||'USD';}
+
+function calcTotals(){
+  const sub=rows.reduce((s,r)=>s+parseFloat(r.qty||0)*parseFloat(r.price||0),0);
+  const fr=parseFloat(document.getElementById('freight').value)||0;
+  const dis=parseFloat(document.getElementById('discount').value)||0;
+  const grand=sub+fr-dis;
+  const c=getCur();
+  document.getElementById('subtotal').textContent=c+' '+sub.toFixed(2);
+  document.getElementById('grand-total').textContent=c+' '+grand.toFixed(2);
+  liveUpdate();
+}
+
+document.getElementById('inv-currency').addEventListener('change',calcTotals);
+
+// ─── LOGO ────────────────────────────────────────────────────────────────────
+function handleLogoUpload(e){
+  const file=e.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    logoSrc=ev.target.result;
+    const img=new Image();
+    img.onload=()=>{
+      logoNatW=img.naturalWidth;logoNatH=img.naturalHeight;
+      document.getElementById('logo-img-thumb').src=logoSrc;
+      document.getElementById('logo-preview').style.display='flex';
+      document.getElementById('logo-drop-inner').style.display='none';
+      liveUpdate();
+    };
+    img.src=logoSrc;
+  };
+  reader.readAsDataURL(file);
+}
+
+function handleLogoDrop(e){
+  e.preventDefault();
+  const file=e.dataTransfer.files[0];
+  if(file&&file.type.startsWith('image/')){
+    document.getElementById('logo-input').files;
+    const dt=new DataTransfer();dt.items.add(file);
+    document.getElementById('logo-input').files=dt.files;
+    handleLogoUpload({target:{files:dt.files}});
+  }
+}
+
+function removeLogo(){
+  logoSrc=null;
+  document.getElementById('logo-preview').style.display='none';
+  document.getElementById('logo-drop-inner').style.display='block';
+  document.getElementById('logo-input').value='';
+  liveUpdate();
+}
+
+function updateLogoSize(){
+  const wSlider=document.getElementById('logo-w');
+  const hSlider=document.getElementById('logo-h');
+  const lock=document.getElementById('logo-lock').checked;
+  document.getElementById('logo-pad-val').textContent=document.getElementById('logo-pad').value+'px';
+
+  // lock ratio
+  if(lock&&logoNatW&&logoNatH){
+    // detect which was changed by comparing to stored
+    const newW=parseInt(wSlider.value);
+    const ratio=logoNatH/logoNatW;
+    const clampedH=Math.min(Math.max(Math.round(newW*ratio),20),120);
+    hSlider.value=clampedH;
+  }
+  document.getElementById('logo-w-val').textContent=wSlider.value+'px';
+  document.getElementById('logo-h-val').textContent=hSlider.value+'px';
+  liveUpdate();
+}
+
+function setLogoPos(pos){
+  logoPosLeft=pos==='left';
+  document.getElementById('pos-left').classList.toggle('active',logoPosLeft);
+  document.getElementById('pos-center').classList.toggle('active',!logoPosLeft);
+  liveUpdate();
+}
+
+// ─── DESIGN ──────────────────────────────────────────────────────────────────
+function onBrandColor(val){
+  document.getElementById('brand-color-hex').value=val;
+  setBrandColor(val,true);
+}
+function onBrandColorHex(val){
+  if(/^#[0-9A-Fa-f]{6}$/.test(val)){document.getElementById('brand-color-picker').value=val;setBrandColor(val,true);}
+}
+function setBrandColor(hex,fromPicker=false){
+  invBrandColor=hex;
+  if(!fromPicker){document.getElementById('brand-color-picker').value=hex;document.getElementById('brand-color-hex').value=hex;}
+  document.querySelectorAll('#brand-swatches .swatch').forEach(s=>s.classList.toggle('active',s.style.background===hex));
+  liveUpdate();
+}
+
+function onTextColor(val){document.getElementById('text-color-hex').value=val;setTextColor(val,true);}
+function onTextColorHex(val){if(/^#[0-9A-Fa-f]{6}$/.test(val)){document.getElementById('text-color-picker').value=val;setTextColor(val,true);}}
+function setTextColor(hex,fromPicker=false){
+  invTextColor=hex;
+  if(!fromPicker){document.getElementById('text-color-picker').value=hex;document.getElementById('text-color-hex').value=hex;}
+  liveUpdate();
+}
+
+function setFont(name,stack){
+  invFont=stack;
+  document.querySelectorAll('#font-grid .font-pill').forEach(p=>p.classList.toggle('active',p.textContent.trim()===name));
+  liveUpdate();
+}
+
+// ─── LIVE UPDATE ──────────────────────────────────────────────────────────────
+function gv(id){return (document.getElementById(id)||{}).value||'';}
+function checked(id){return document.getElementById(id)?.checked;}
+
+function liveUpdate(){
+  const cur=getCur();
+  const sub=rows.reduce((s,r)=>s+parseFloat(r.qty||0)*parseFloat(r.price||0),0);
+  const fr=parseFloat(gv('freight'))||0;
+  const dis=parseFloat(gv('discount'))||0;
+  const grand=sub+fr-dis;
+  const invDate=gv('inv-date')?new Date(gv('inv-date')+'T00:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'}):'—';
+  const showTopBar=checked('tog-topbar');
+  const showBotBar=checked('tog-bottombar');
+  const showDivider=checked('tog-divider');
+  const tableColored=checked('tog-tablecolor');
+  const logoW=gv('logo-w')||120;
+  const logoH=gv('logo-h')||60;
+  const logoPad=gv('logo-pad')||4;
+  const logoTransp=checked('logo-transp');
+
+  const thStyle=tableColored
+    ?`background:${invBrandColor};color:#fff`
+    :`background:#F6F4EE;color:${invBrandColor}`;
+
+  const logoHtml=logoSrc?`<img src="${logoSrc}" style="width:${logoW}px;height:${logoH}px;object-fit:contain;padding:${logoPad}px;border-radius:4px;${logoTransp?'':'background:#fff;'}display:block" />`:'';
+
+  const itemRows=rows.map((r,i)=>`
+    <tr>
+      <td>${i+1}</td>
+      <td>${r.desc||'—'}</td>
+      <td>${r.hs||'—'}</td>
+      <td style="text-align:right">${r.qty||0}</td>
+      <td>${r.unit||''}</td>
+      <td style="text-align:right">${parseFloat(r.price||0).toFixed(2)}</td>
+      <td style="text-align:right">${fmtAmt(r.qty,r.price)}</td>
+    </tr>`).join('');
+
+  document.getElementById('inv-doc').innerHTML=`
+    <style>
+      #inv-doc *{font-family:${invFont};color:${invTextColor}}
+      #inv-doc .inv-title-area .inv-main-title{color:${invBrandColor}!important}
+      #inv-doc .party-lbl,#inv-doc .meta-pill-lbl,#inv-doc .footer-lbl,#inv-doc .inv-tr.grand{color:${invBrandColor}!important}
+      #inv-doc .inv-tr.grand{border-top-color:${invBrandColor}!important}
+      #inv-doc .inv-top-bar,#inv-doc .inv-bottom-bar{background:${invBrandColor}!important}
+      #inv-doc .inv-table th{${thStyle}}
+    </style>
+    ${showTopBar?'<div class="inv-top-bar"></div>':''}
+    <div class="inv-body">
+      <div class="inv-hdr" style="${logoPosLeft?'':'flex-direction:column;align-items:center;text-align:center'}">
+        <div class="inv-logo-area" style="${logoPosLeft?'':'align-items:center;margin-bottom:12px'}">
+          ${logoHtml}
+          ${!logoHtml?`<div style="font-size:18px;font-weight:700;color:${invBrandColor};font-family:${invFont}">${gv('exp-name')||'Your Company'}</div>`:''}
+          ${logoHtml&&gv('exp-name')?`<div style="font-size:11px;color:#666;margin-top:2px;font-family:${invFont}">${gv('exp-name')}</div>`:''}
+        </div>
+        <div class="inv-title-area">
+          <div class="inv-main-title">COMMERCIAL<br>INVOICE</div>
+          <div class="inv-meta-table">
+            <div>Invoice No: <strong>${gv('inv-no')||'—'}</strong></div>
+            <div>Date: <strong>${invDate}</strong></div>
+            <div>Currency: <strong>${cur}</strong></div>
+            <div>Incoterms: <strong>${gv('incoterms')||'—'}</strong></div>
+            ${gv('buy-po')?`<div>PO Ref: <strong>${gv('buy-po')}</strong></div>`:''}
+          </div>
+        </div>
+      </div>
+
+      ${showDivider?`<div class="inv-divider"></div>`:''}
+
+      <div class="inv-parties">
+        <div>
+          <div class="party-lbl">Exporter / Seller</div>
+          <div class="party-name">${gv('exp-name')||'—'}</div>
+          <div class="party-detail">
+            ${gv('exp-addr')||''}${gv('exp-addr')?'<br>':''}
+            NTN: ${gv('exp-ntn')||'—'} &nbsp;|&nbsp; STRN: ${gv('exp-strn')||'—'}
+            ${gv('exp-cc')?'<br>CC Reg: '+gv('exp-cc'):''}
+            ${gv('exp-phone')||gv('exp-email')?'<br>'+[gv('exp-phone'),gv('exp-email')].filter(Boolean).join(' | '):''}
+          </div>
+        </div>
+        <div>
+          <div class="party-lbl">Importer / Buyer</div>
+          <div class="party-name">${gv('buy-name')||'—'}</div>
+          <div class="party-detail">
+            ${gv('buy-addr')||''}${gv('buy-addr')?'<br>':''}
+            ${gv('buy-country')||''}
+            ${gv('buy-contact')||gv('buy-email')?'<br>'+[gv('buy-contact'),gv('buy-email')].filter(Boolean).join(' | '):''}
+            ${gv('buy-phone')?'<br>'+gv('buy-phone'):''}
+          </div>
+        </div>
+      </div>
+
+      <div class="inv-meta-pills">
+        <div class="meta-pill"><div class="meta-pill-lbl">Port of Loading</div><div class="meta-pill-val">${gv('port-load')||'—'}</div></div>
+        <div class="meta-pill"><div class="meta-pill-lbl">Port of Discharge</div><div class="meta-pill-val">${gv('port-disc')||'—'}</div></div>
+        <div class="meta-pill"><div class="meta-pill-lbl">Country of Origin</div><div class="meta-pill-val">${gv('origin')||'Pakistan'}</div></div>
+      </div>
+
+      <table class="inv-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Description of Goods</th>
+            <th>HS Code</th>
+            <th style="text-align:right">Qty</th>
+            <th>Unit</th>
+            <th style="text-align:right">Unit Price</th>
+            <th style="text-align:right">Amount (${cur})</th>
+          </tr>
+        </thead>
+        <tbody>${itemRows||`<tr><td colspan="7" style="text-align:center;color:#aaa;padding:20px">No items added</td></tr>`}</tbody>
+      </table>
+
+      <div class="inv-totals-wrap">
+        <div class="inv-totals-inner">
+          <div class="inv-tr"><span>Subtotal</span><span>${cur} ${sub.toFixed(2)}</span></div>
+          ${fr?`<div class="inv-tr"><span>Freight / Insurance</span><span>${cur} ${fr.toFixed(2)}</span></div>`:''}
+          ${dis?`<div class="inv-tr"><span>Discount</span><span>− ${cur} ${dis.toFixed(2)}</span></div>`:''}
+          <div class="inv-tr grand"><span>Total Invoice Value</span><span>${cur} ${grand.toFixed(2)}</span></div>
+        </div>
+      </div>
+
+      <div class="inv-footer-grid">
+        <div>
+          <div class="footer-lbl">Payment Terms</div>
+          <div>${gv('pay-terms')||'—'}</div>
+          ${gv('lc-no')?`<div style="margin-top:5px"><span style="color:${invBrandColor};font-weight:600">L/C:</span> ${gv('lc-no')}</div>`:''}
+          ${gv('dtre')?`<div style="margin-top:4px"><span style="color:${invBrandColor};font-weight:600">DTRE Ref:</span> ${gv('dtre')}</div>`:''}
+          <div style="margin-top:10px">
+            <div class="footer-lbl">Bank Details</div>
+            ${gv('exp-bank')||'—'}
+            ${gv('exp-acc')?'<br>Acc: '+gv('exp-acc'):''}
+            ${gv('exp-swift')?'<br>SWIFT: '+gv('exp-swift'):''}
+            ${gv('exp-iban')?'<br>IBAN: '+gv('exp-iban'):''}
+          </div>
+        </div>
+        <div>
+          <div class="footer-lbl">Declaration</div>
+          <div style="line-height:1.65">${gv('declaration')}</div>
+          ${gv('ship-mode')?`<div style="margin-top:6px"><span style="color:${invBrandColor};font-weight:600">Mode:</span> ${gv('ship-mode')}</div>`:''}
+          ${gv('remarks')?`<div style="margin-top:5px;color:#BA7517"><i>Remarks: ${gv('remarks')}</i></div>`:''}
+          <div class="sig-line">Authorized Signatory — ${gv('exp-name')||'Exporter'}</div>
+        </div>
+      </div>
+    </div>
+    ${showBotBar?'<div class="inv-bottom-bar"></div>':''}
+  `;
+}
+
+// ─── PRINT ────────────────────────────────────────────────────────────────────
+function printPDF(){
+  const content=document.getElementById('inv-doc').innerHTML;
+  const w=window.open('','_blank','width=860,height:1000');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Invoice ${gv('inv-no')}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=DM+Sans:wght@300;400;500;600&family=Lora:wght@500;600&family=Cormorant+Garamond:wght@500;600&family=Space+Grotesk:wght@400;500;600&family=Syne:wght@500;600;700&family=Fraunces:wght@500;600&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:#fff;padding:0;margin:0}
+    .inv-doc{font-family:sans-serif;color:#1a1a1a;max-width:800px;margin:0 auto}
+    .inv-top-bar{height:8px}
+    .inv-body{padding:2rem 2.5rem}
+    .inv-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.75rem}
+    .inv-logo-area{display:flex;flex-direction:column;gap:6px}
+    .inv-title-area{text-align:right}
+    .inv-main-title{font-size:28px;font-weight:700;line-height:1.1;text-align:right}
+    .inv-meta-table{font-size:11px;color:#555;text-align:right;margin-top:8px;line-height:1.9}
+    .inv-meta-table strong{color:#1a1a1a}
+    .inv-divider{height:1.5px;opacity:.2;margin:0 0 1.25rem}
+    .inv-parties{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;background:#F6F4EE;border-radius:8px;padding:1rem 1.25rem;margin-bottom:1.25rem}
+    .party-lbl{font-size:9px;text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:4px}
+    .party-name{font-size:13px;font-weight:600;color:#1a1a1a;margin-bottom:3px}
+    .party-detail{font-size:11px;color:#555;line-height:1.65}
+    .inv-meta-pills{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1.25rem}
+    .meta-pill{background:#F6F4EE;border-radius:7px;padding:8px 10px}
+    .meta-pill-lbl{font-size:9px;text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-bottom:3px}
+    .meta-pill-val{font-size:12px;font-weight:600;color:#1a1a1a}
+    .inv-table{width:100%;border-collapse:collapse;font-size:11.5px;margin-bottom:1.25rem}
+    .inv-table th{padding:8px 10px;text-align:left;font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+    .inv-table th:last-child,.inv-table td:last-child{text-align:right}
+    .inv-table td{padding:8px 10px;border-bottom:1px solid #eee}
+    .inv-table tr:last-child td{border-bottom:none}
+    .inv-table tr:nth-child(even) td{background:#F9F8F5}
+    .inv-totals-wrap{display:flex;justify-content:flex-end;margin-bottom:1.25rem}
+    .inv-totals-inner{width:220px}
+    .inv-tr{display:flex;justify-content:space-between;font-size:11.5px;padding:3.5px 0;color:#666}
+    .inv-tr.grand{font-weight:700;font-size:13.5px;color:#1a1a1a;border-top-width:2px;border-top-style:solid;padding-top:7px;margin-top:3px}
+    .inv-footer-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;padding-top:1.25rem;border-top:1px solid #e8e6e0;font-size:11px;color:#555}
+    .footer-lbl{font-size:9px;text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-bottom:4px}
+    .sig-line{border-top:1px solid #ccc;margin-top:28px;padding-top:4px;font-size:10px;color:#aaa;text-align:center}
+    .inv-bottom-bar{height:6px;opacity:.3;margin-top:1.5rem}
+    @media print{@page{size:A4;margin:0}body{margin:0}.inv-body{padding:1.5cm 2cm}}
+  </style>
+  </head><body><div class="inv-doc">${content}</div></body></html>`);
+  w.document.close();
+  setTimeout(()=>{w.print();},800);
+}
+
+// ─── CLEAR ────────────────────────────────────────────────────────────────────
+function clearAll(){
+  document.querySelectorAll('input,textarea,select').forEach(el=>{
+    if(el.type==='date')el.value='';
+    else if(el.tagName==='SELECT')el.selectedIndex=0;
+    else if(!['origin','declaration','logo-w','logo-h','logo-pad','logo-lock','tog-topbar','tog-bottombar','tog-divider','tog-tablecolor'].includes(el.id))el.value='';
+  });
+  document.getElementById('origin').value='Pakistan';
+  document.getElementById('declaration').value='We hereby certify that the goods described herein are of Pakistan origin and that the particulars given are true and correct.';
+  rows=[];renderRows();removeLogo();liveUpdate();
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+document.getElementById('inv-date').value=new Date().toISOString().split('T')[0];
+addRow('Cotton Grey Fabric 100%','5208.11','500','MTR','2.80');
+addRow('','','','PCS','');
+document.getElementById('logo-pad').addEventListener('input',function(){
+  document.getElementById('logo-pad-val').textContent=this.value+'px';
+  liveUpdate();
+});
+liveUpdate();
+</script>
+</body>
+</html>
