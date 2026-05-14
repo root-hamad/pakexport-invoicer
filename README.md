@@ -27,13 +27,9 @@ PakExport Invoicer is a lightweight commercial invoice generator designed for Pa
 
 ## 🚀 Live Demo
 
-Live demo will be available here:
+Live demo is available here:
 
-https://YOUR_DOMAIN.com  
-or  
 https://pakexport-invoicer.netlify.app
-
-(Will update after deployment)
 
 ---
 
